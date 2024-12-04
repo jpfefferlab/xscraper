@@ -11,7 +11,7 @@ setup(
     url="https://github.com/jpfefferlab/xscraper",  # Link to your GitHub repo
     packages=find_packages(),        # Automatically find subpackages
     install_requires=[
-    "beautifulsoup4"
+    "beautifulsoup4",
     "python-dateutil",         
     "selenium",               # Selenium for web automation
     "chromedriver-autoinstaller",  # Automatically installs the appropriate ChromeDriver

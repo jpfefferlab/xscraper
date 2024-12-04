@@ -1,0 +1,504 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scraper &mdash; xscraper 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            xscraper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../01_about.html">XScraper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../02_functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../04_source.html">Source Data</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">xscraper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">scraper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for scraper</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">from</span> <span class="nn">dateutil</span> <span class="kn">import</span> <span class="n">parser</span>
+
+<span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.chrome.options</span> <span class="kn">import</span> <span class="n">Options</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.by</span> <span class="kn">import</span> <span class="n">By</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.keys</span> <span class="kn">import</span> <span class="n">Keys</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support.ui</span> <span class="kn">import</span> <span class="n">WebDriverWait</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.support</span> <span class="kn">import</span> <span class="n">expected_conditions</span> <span class="k">as</span> <span class="n">EC</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.action_chains</span> <span class="kn">import</span> <span class="n">ActionChains</span>
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="n">TimeoutException</span>
+<span class="kn">from</span> <span class="nn">selenium.common.exceptions</span> <span class="kn">import</span> <span class="n">StaleElementReferenceException</span>
+
+<span class="kn">import</span> <span class="nn">chromedriver_autoinstaller</span>
+<span class="n">chromedriver_autoinstaller</span><span class="o">.</span><span class="n">install</span><span class="p">()</span> 
+
+
+<div class="viewcode-block" id="start_selenium">
+<a class="viewcode-back" href="../02_functions.html#scraper.start_selenium">[docs]</a>
+<span class="k">def</span> <span class="nf">start_selenium</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This function will start an automated browser and first open wikipedia, then X. </span>
+<span class="sd">        Wait until the X page is fully loaded. Then, you can manually login to X,</span>
+<span class="sd">        and answer the questions you are asked (e.g. solve a captcha or disable cookies</span>
+<span class="sd">        when asked). Once you are finished and the X Newsfeed is fully visible, you can</span>
+<span class="sd">        execute the next function, using this driver object.</span>
+<span class="sd">        </span>
+<span class="sd">        Alternatively, if you want to use another browser, you can use your own function to create a driver object.</span>
+<span class="sd">        </span>
+<span class="sd">        Caution: With this function, we try to simulate a normal Chrome browser, not a test browser. </span>
+<span class="sd">        To make this work, a Chrome browser needs to be installed on your system. If this functions </span>
+<span class="sd">        starts a browser in a test environment, check whether you have chrome installed.</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: A driver object. This can be inserted in each function requiring the driver.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">Options</span><span class="p">()</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;start-maximized&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_experimental_option</span><span class="p">(</span><span class="s2">&quot;excludeSwitches&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;enable-automation&quot;</span><span class="p">])</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_experimental_option</span><span class="p">(</span><span class="s1">&#39;useAutomationExtension&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--disable-blink-features=AutomationControlled&#39;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--profile-directory=Default&quot;</span><span class="p">)</span>
+    <span class="n">options</span><span class="o">.</span><span class="n">add_experimental_option</span><span class="p">(</span><span class="s2">&quot;prefs&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;intl.accept_languages&quot;</span><span class="p">:</span> <span class="s2">&quot;en,en_US&quot;</span><span class="p">})</span>
+    <span class="n">driver</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+    
+    <span class="c1">#Open Wikipedia, so that we have another start adress</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://en.wikipedia.org&quot;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+    
+    <span class="c1">#Open X</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;https://x.com/home&quot;</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_profile_details">
+<a class="viewcode-back" href="../02_functions.html#scraper.get_profile_details">[docs]</a>
+<span class="k">def</span> <span class="nf">get_profile_details</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return profile metadata for a given user. This metadata includes for example the users statistics and biography. </span>
+<span class="sd">        More information on how a profile metadata object looks like can be found in the chapter source.</span>
+<span class="sd">    </span>
+<span class="sd">        :param str username: Provide username as string, eg. &quot;xplodingunicorn&quot;. </span>
+<span class="sd">        :param selenium.WebDriver driver: The driver you have created with start_selenium() (or your own driver) </span>
+<span class="sd">        :returns: A profile metadata object (see source)</span>
+<span class="sd">        :rtype: set</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">user_profile</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">username</span><span class="p">)</span>
+    <span class="n">xpath_expression</span> <span class="o">=</span> <span class="s1">&#39;//*[@data-testid=&quot;UserProfileSchema-test&quot;]&#39;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">element</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_element_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">XPATH</span><span class="p">,</span> <span class="n">xpath_expression</span><span class="p">)))</span>
+
+        <span class="n">json_str</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s2">&quot;innerText&quot;</span><span class="p">)</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
+        
+        <span class="n">author</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;author&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">interaction_statistic</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;interactionStatistic&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;given_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;givenName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;user_bio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;user_location&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;homeLocation&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;homeLocation&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;number_of_followers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;userInteractionCount&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">interaction_statistic</span> <span class="k">if</span> <span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;interactionType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;https://schema.org/FollowAction&#39;</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;number_of_following&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;userInteractionCount&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">interaction_statistic</span> <span class="k">if</span> <span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;interactionType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;https://schema.org/SubscribeAction&#39;</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;number_of_posts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;userInteractionCount&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">interaction</span> <span class="ow">in</span> <span class="n">interaction_statistic</span> <span class="k">if</span> <span class="n">interaction</span><span class="p">[</span><span class="s1">&#39;interactionType&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;https://schema.org/WriteAction&#39;</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;user_website&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relatedLink&quot;</span><span class="p">,</span> <span class="p">[])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relatedLink&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;additionalName&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">user_join_date_str</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;dateCreated&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user_join_date_str</span><span class="p">:</span>
+            <span class="n">user_join_date</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">user_join_date_str</span><span class="p">)</span>
+            <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;user_join_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_join_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">.%m.%Y&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">user_profile</span><span class="p">[</span><span class="s2">&quot;user_join_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">user_profile</span>
+
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Timed out waiting for elements to appear&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_followings_of_user">
+<a class="viewcode-back" href="../02_functions.html#scraper.get_followings_of_user">[docs]</a>
+<span class="k">def</span>  <span class="nf">get_followings_of_user</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the names of users a given profile is following. </span>
+<span class="sd">        </span>
+<span class="sd">        :param str username: Provide username as string, eg. &quot;xplodingunicorn&quot;. </span>
+<span class="sd">        :param selenium.WebDriver driver: The driver you have created with start_selenium() (or your own driver) </span>
+<span class="sd">        :param int n: The number of followings, which should be collected. </span>
+<span class="sd">        :returns: A string list of usernames</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">username</span><span class="o">+</span><span class="s1">&#39;/following&#39;</span><span class="p">)</span>
+    <span class="n">collected_usernames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">collected_elements</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">xpath_expression</span> <span class="o">=</span> <span class="s1">&#39;//*[@data-testid=&quot;cellInnerDiv&quot;]/div/div/button/div/div[2]/div[1]/div[1]/div/div[2]/div/a/div/div/span&#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_all_elements_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">XPATH</span><span class="p">,</span> <span class="n">xpath_expression</span><span class="p">)))</span>
+           
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">collected_usernames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="k">break</span> 
+                <span class="k">if</span> <span class="n">element</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">collected_elements</span><span class="p">:</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">collected_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">collected_usernames</span><span class="p">:</span>
+                        <span class="n">collected_usernames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                        
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">collected_usernames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                <span class="k">break</span> 
+
+            <span class="c1">#Check, whether end of page reached</span>
+            <span class="n">current_scroll_position</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.scrollY&quot;</span><span class="p">)</span>
+            <span class="n">total_page_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.body.scrollHeight&quot;</span><span class="p">)</span>
+            <span class="n">visible_window_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.innerHeight&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_scroll_position</span> <span class="o">+</span> <span class="n">visible_window_height</span> <span class="o">&gt;=</span> <span class="n">total_page_height</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;End of page reached&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            
+            <span class="c1"># Scroll down to load more followings</span>
+            <span class="n">scroll_duration</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">scroll_duration</span>
+            <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">end_time</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="s2">&quot;xpath&quot;</span><span class="p">,</span> <span class="s2">&quot;//body&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">ARROW_DOWN</span><span class="p">)</span>
+
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">continue</span> 
+    <span class="k">return</span> <span class="n">collected_usernames</span></div>
+
+  
+
+  
+<div class="viewcode-block" id="get_followers_of_user">
+<a class="viewcode-back" href="../02_functions.html#scraper.get_followers_of_user">[docs]</a>
+<span class="k">def</span> <span class="nf">get_followers_of_user</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the names of users following a given profile. </span>
+<span class="sd">        </span>
+<span class="sd">        :param str username: Provide username as string, eg. &quot;xplodingunicorn&quot;. </span>
+<span class="sd">        :param selenium.WebDriver driver: The driver you have created with start_selenium() (or your own driver) </span>
+<span class="sd">        :param int n: The number of followers, which should be collected. </span>
+<span class="sd">        :returns: A string list of usernames</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">username</span><span class="o">+</span><span class="s1">&#39;/followers&#39;</span><span class="p">)</span>
+    <span class="n">collected_usernames</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">collected_elements</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">xpath_expression</span> <span class="o">=</span> <span class="s1">&#39;//*[@data-testid=&quot;cellInnerDiv&quot;]/div/div/button/div/div[2]/div[1]/div[1]/div/div[2]/div/a/div/div/span&#39;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">elements</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">presence_of_all_elements_located</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">XPATH</span><span class="p">,</span> <span class="n">xpath_expression</span><span class="p">)))</span>
+            <span class="n">initial_scroll_position</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.scrollY;&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">collected_usernames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="k">break</span> 
+                <span class="k">if</span> <span class="n">element</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">collected_elements</span><span class="p">:</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">collected_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;@&#39;</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="n">username</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">collected_usernames</span><span class="p">:</span>
+                            <span class="n">collected_usernames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                    
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">collected_usernames</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                <span class="k">break</span> 
+
+            <span class="c1">#Check, whether end of page reached</span>
+            <span class="n">current_scroll_position</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.scrollY&quot;</span><span class="p">)</span>
+            <span class="n">total_page_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.body.scrollHeight&quot;</span><span class="p">)</span>
+            <span class="n">visible_window_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.innerHeight&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_scroll_position</span> <span class="o">+</span> <span class="n">visible_window_height</span> <span class="o">&gt;=</span> <span class="n">total_page_height</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;End of page reached&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+            
+            <span class="c1"># Scroll down to load more followers</span>
+            <span class="n">scroll_duration</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">scroll_duration</span>
+            <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">end_time</span><span class="p">:</span>
+                <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="s2">&quot;xpath&quot;</span><span class="p">,</span> <span class="s2">&quot;//body&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">ARROW_DOWN</span><span class="p">)</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">continue</span> 
+    <span class="k">return</span> <span class="n">collected_usernames</span></div>
+
+
+
+<div class="viewcode-block" id="get_tweets_of_user">
+<a class="viewcode-back" href="../02_functions.html#scraper.get_tweets_of_user">[docs]</a>
+<span class="k">def</span> <span class="nf">get_tweets_of_user</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the metadata of the tweets of a given user. The tweets contain all original tweets, replies, which</span>
+<span class="sd">        are displayed on the post section on X and quotes (but not simple reposts without text).</span>
+<span class="sd">        </span>
+<span class="sd">        The metadata includes for example the tweets text.</span>
+<span class="sd">        More information on how a tweet metadata object looks like can be found in the chapter source.</span>
+<span class="sd">   </span>
+<span class="sd">        :param str username: Provide username as string, eg. &quot;xplodingunicorn&quot;. </span>
+<span class="sd">        :param selenium.WebDriver driver: The driver you have created with start_selenium() (or your own driver) </span>
+<span class="sd">        :param int n: The number of tweets, which should be collected. </span>
+<span class="sd">        :returns: A list of tweet objects (see source)</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">username</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">username</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    
+    <span class="c1">#Scroll to tweets</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s1">&#39;window.scrollTo(0, 500)&#39;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+    <span class="n">tlinks</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">tcont</span><span class="o">=</span><span class="p">{}</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+        
+        <span class="c1">#Collect the first 4-5 tweets</span>
+        <span class="n">tweets</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s1">&#39;[data-testid=&quot;tweet&quot;]&#39;</span><span class="p">)</span>         
+        <span class="c1">#Save tweets of the user (ignore retweets und tweets of other users)</span>
+        <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tlinks</span><span class="p">)</span><span class="o">&gt;=</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">tweetcontent</span> <span class="o">=</span> <span class="n">tweet</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s1">&#39;innerHTML&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">tweetid</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">username</span><span class="o">+</span><span class="s2">&quot;/status/([0-9]+)&quot;</span><span class="p">,</span> <span class="n">tweetcontent</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">tweetid</span> <span class="o">!=</span> <span class="p">[]):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tlinks</span><span class="p">):</span>
+                        <span class="n">tlinks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">tcont</span><span class="p">[</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="n">tweetcontent</span>
+            <span class="k">except</span> <span class="n">StaleElementReferenceException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">nothingtodohere</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tlinks</span><span class="p">)</span><span class="o">&gt;=</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="c1">#Check, whether end of page reached</span>
+        <span class="n">current_scroll_position</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.scrollY&quot;</span><span class="p">)</span>
+        <span class="n">total_page_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.body.scrollHeight&quot;</span><span class="p">)</span>
+        <span class="n">visible_window_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.innerHeight&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">current_scroll_position</span> <span class="o">+</span> <span class="n">visible_window_height</span> <span class="o">&gt;=</span> <span class="n">total_page_height</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;End of page reached&#39;</span><span class="p">)</span>
+            <span class="k">break</span>
+        
+        <span class="c1"># Scroll down to load more tweets</span>
+        <span class="n">scroll_duration</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">scroll_duration</span>
+        <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">end_time</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="s2">&quot;xpath&quot;</span><span class="p">,</span> <span class="s2">&quot;//body&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">ARROW_DOWN</span><span class="p">)</span>
+        
+    <span class="c1">#Process Tweetcontent</span>
+    <span class="n">all_tweets</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">tweetid</span><span class="p">,</span><span class="n">tweet</span> <span class="ow">in</span> <span class="n">tcont</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tweetdata</span><span class="o">=</span><span class="p">{}</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">tweet</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;div&#39;</span><span class="p">,</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;data-testid&quot;</span> <span class="p">:</span> <span class="s2">&quot;tweettext&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)[</span><span class="s1">&#39;href&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;link&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/status/&#39;</span><span class="o">+</span><span class="n">tweetid</span>
+            
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">statistics</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;div&#39;</span><span class="p">,</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;role&quot;</span> <span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">})[</span><span class="s1">&#39;aria-label&#39;</span><span class="p">]</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;replies&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;repl&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;repl&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;reposts&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;repo&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;repo&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;likes&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;lik&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;lik&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;bookmarks&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;book&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;book&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;views&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;view&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;view&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No statistics could be extracted for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">,</span> <span class="s1">&#39;. This tweet might be an advertisement&#39;</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span> 
+                    <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No creation date could be extracted for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">,</span> <span class="s1">&#39;. This tweet might be an advertisement&#39;</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="n">all_tweets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweetdata</span><span class="p">)</span> 
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error with extracting data for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">)</span>
+            <span class="k">continue</span>           
+    <span class="k">return</span><span class="p">(</span><span class="n">all_tweets</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_tweets_by_keyword">
+<a class="viewcode-back" href="../02_functions.html#scraper.get_tweets_by_keyword">[docs]</a>
+<span class="k">def</span> <span class="nf">get_tweets_by_keyword</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">keyword</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the metadata of the tweets for a given keyword or hashtag. This metadata includes for example the tweets text. </span>
+<span class="sd">        More information on how a tweet metadata object looks like can be found in the chapter source.</span>
+
+<span class="sd">        :param str keyword: Provide a keyword, e.g. &quot;funny dog&quot; or hashtag, e.g. &quot;#funny&quot; as string. </span>
+<span class="sd">        :param selenium.WebDriver driver: The driver you have created with start_selenium() (or your own driver) </span>
+<span class="sd">        :param int n: The number of tweets, which should be collected. </span>
+<span class="sd">        :returns: A list of tweet objects (see source)</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;https://x.com/home&#39;</span><span class="p">)</span>
+    <span class="n">actions</span> <span class="o">=</span> <span class="n">ActionChains</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+    <span class="n">wait</span> <span class="o">=</span> <span class="n">WebDriverWait</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="n">tlinks</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">tcont</span><span class="o">=</span><span class="p">{}</span>
+
+    <span class="n">wait</span><span class="o">.</span><span class="n">until</span><span class="p">(</span><span class="n">EC</span><span class="o">.</span><span class="n">element_to_be_clickable</span><span class="p">((</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s1">&#39;[autocomplete=&quot;off&quot;]&#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
+    <span class="n">actions</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">ENTER</span><span class="p">)</span>
+    <span class="n">actions</span><span class="o">.</span><span class="n">perform</span><span class="p">()</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+        
+        <span class="c1">#Collect the first 4-5 tweets</span>
+        <span class="n">tweets</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements</span><span class="p">(</span><span class="n">By</span><span class="o">.</span><span class="n">CSS_SELECTOR</span><span class="p">,</span> <span class="s1">&#39;[data-testid=&quot;tweet&quot;]&#39;</span><span class="p">)</span>         
+        <span class="c1">#Save tweets of the user (ignore retweets und tweets of other users)</span>
+        <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tlinks</span><span class="p">)</span><span class="o">&gt;=</span><span class="n">n</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">tweetcontent</span> <span class="o">=</span> <span class="n">tweet</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s1">&#39;innerHTML&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">tweetid</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;/status/([0-9]+)&quot;</span><span class="p">,</span> <span class="n">tweetcontent</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">tweetid</span> <span class="o">!=</span> <span class="p">[]):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tlinks</span><span class="p">):</span>
+                        <span class="n">tlinks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">tcont</span><span class="p">[</span><span class="n">tweetid</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="n">tweetcontent</span>
+            <span class="k">except</span> <span class="n">StaleElementReferenceException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">nothingtodohere</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tlinks</span><span class="p">)</span><span class="o">&gt;=</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">break</span>
+
+        <span class="c1">#Check, whether end of page reached</span>
+        <span class="n">current_scroll_position</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.scrollY&quot;</span><span class="p">)</span>
+        <span class="n">total_page_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return document.body.scrollHeight&quot;</span><span class="p">)</span>
+        <span class="n">visible_window_height</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_script</span><span class="p">(</span><span class="s2">&quot;return window.innerHeight&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">current_scroll_position</span> <span class="o">+</span> <span class="n">visible_window_height</span> <span class="o">&gt;=</span> <span class="n">total_page_height</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;End of page reached&#39;</span><span class="p">)</span>
+            <span class="k">break</span>
+            
+        <span class="c1"># Scroll down to load more tweets</span>
+        <span class="n">scroll_duration</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">scroll_duration</span>
+        <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">end_time</span><span class="p">:</span>
+            <span class="n">driver</span><span class="o">.</span><span class="n">find_element</span><span class="p">(</span><span class="s2">&quot;xpath&quot;</span><span class="p">,</span> <span class="s2">&quot;//body&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">send_keys</span><span class="p">(</span><span class="n">Keys</span><span class="o">.</span><span class="n">ARROW_DOWN</span><span class="p">)</span>
+        
+    <span class="c1">#Process Tweetcontent</span>
+    <span class="n">all_tweets</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">tweetid</span><span class="p">,</span><span class="n">tweet</span> <span class="ow">in</span> <span class="n">tcont</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tweetdata</span><span class="o">=</span><span class="p">{}</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">tweet</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;div&#39;</span><span class="p">,</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;data-testid&quot;</span> <span class="p">:</span> <span class="s2">&quot;tweettext&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)[</span><span class="s1">&#39;href&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;link&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://x.com/&#39;</span><span class="o">+</span><span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/status/&#39;</span><span class="o">+</span><span class="n">tweetid</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">statistics</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;div&#39;</span><span class="p">,</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;role&quot;</span> <span class="p">:</span> <span class="s2">&quot;group&quot;</span><span class="p">})[</span><span class="s1">&#39;aria-label&#39;</span><span class="p">]</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;replies&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;repl&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;repl&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;reposts&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;repo&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;repo&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;likes&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;lik&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;lik&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;bookmarks&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;book&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;book&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;views&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="nb">int</span><span class="p">([</span><span class="n">part</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;view&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;view&#39;</span> <span class="ow">in</span> <span class="n">statistics</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No statistics could be extracted for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">,</span> <span class="s1">&#39;. This tweet might be an advertisement&#39;</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span> 
+                    <span class="n">tweetdata</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No creation date could be extracted for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">,</span> <span class="s1">&#39;. This tweet might be an advertisement&#39;</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="n">all_tweets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweetdata</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error with extracting data for tweet&#39;</span><span class="p">,</span> <span class="n">tweetid</span><span class="p">)</span>
+            <span class="k">continue</span>           
+    <span class="k">return</span><span class="p">(</span><span class="n">all_tweets</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Angelina Voggenreiter, Idil Sezgin.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
